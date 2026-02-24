@@ -83,7 +83,7 @@
 <script>
 const totalPages = 50; // Change this to match the number of images each time
 const PAGES = Array.from({ length: totalPages }, (_, i) => {
-  const pageNumber = i.toString().padStart(3, '0');
+  const pageNumber = (i +1).toString().padStart(3, '0');
   return `images/page-${pageNumber}.jpg`;
 });
 
