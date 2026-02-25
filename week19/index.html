@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <title>Fashion Show - Week 19 – Flipbook</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta http-equiv="refresh" content="5">
 <style>
   :root{ --bg:#0e0f14; --fg:#f3f6fb; --muted:#99a2b3; --line:#1f2332; --ink:#11182a; }
   *{ box-sizing:border-box }
@@ -291,11 +292,6 @@ const PAGES = Array.from({ length: totalPages }, (_, i) => {
     if (e.key === 'ArrowLeft')  $('#book').turn('previous');
     if (e.key === 'ArrowRight') $('#book').turn('next');
   });
-
-  // Reload page after 1 second
-setTimeout(() => {
-  window.location.replace(window.location.href);
-}, 5000);
   
 })();
 </script>
