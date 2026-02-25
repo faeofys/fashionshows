@@ -81,9 +81,9 @@
 </div>
 
 <script>
-const totalPages = 28; // Change this to match the number of images each time
+const totalPages = 50; // Change this to match the number of images each time
 const PAGES = Array.from({ length: totalPages }, (_, i) => {
-  const pageNumber = (i+1).toString().padStart(3, '0');
+  const pageNumber = (i + 1).toString().padStart(3, '0');
   return `images/page-${pageNumber}.jpg`;
 });
 
@@ -172,8 +172,8 @@ const PAGES = Array.from({ length: totalPages }, (_, i) => {
       $('#book').turn('display', disp);
     }
 
-    const natW = (disp === 'single') ? 1224 : 2448;
-    const natH = (disp === 'single') ? 1584 : 1584;
+    const natW = (disp === 'single') ? 2304 : 4608;
+    const natH = (disp === 'single') ? 3072 : 3072;
 
     const { maxW, maxH } = availableSize();
 
@@ -350,6 +350,6 @@ const PAGES = Array.from({ length: totalPages }, (_, i) => {
         setRangeFill(vol, vol.value, 1);
       })();
 
-    </script>
+</script>
 </body>
 </html>
