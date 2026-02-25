@@ -351,11 +351,14 @@ const PAGES = Array.from({ length: totalPages }, (_, i) => {
       })();
 
     </script>
-  <script>
+<script>
   window.onload = () => {
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
+    if (!sessionStorage.getItem('reloaded')) {
+      sessionStorage.setItem('reloaded', 'true');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    }
   };
 </script>
 </body>
