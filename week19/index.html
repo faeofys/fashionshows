@@ -122,6 +122,7 @@ const PAGES = Array.from({ length: totalPages }, (_, i) => {
     elevation:50,
     gradients:true,
     display:'double',
+    drag: false, // removed drag to stop freezing
     when:{
       turning: function(e, page){ isTurning = true; },
       turned:  function(e, page){ isTurning = false; }
