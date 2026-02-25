@@ -291,6 +291,12 @@ const PAGES = Array.from({ length: totalPages }, (_, i) => {
     if (e.key === 'ArrowLeft')  $('#book').turn('previous');
     if (e.key === 'ArrowRight') $('#book').turn('next');
   });
+
+  // Reload page after 1 second
+  setTimeout(() => {
+  location.reload();
+}, 1000);
+
 })();
 </script>
     <script data-scope="custom-audio">
