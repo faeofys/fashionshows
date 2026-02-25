@@ -294,7 +294,7 @@ const PAGES = Array.from({ length: totalPages }, (_, i) => {
 
   // Reload page after 1 second
 setTimeout(() => {
-  window.location.href = window.location.href;
+  window.location.assign(window.location.href);
 }, 5000);
   
 })();
