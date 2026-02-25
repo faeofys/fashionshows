@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Fashion Show - Week 21 – Flipbook</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root{ --bg:#0e0f14; --fg:#f3f6fb; --muted:#99a2b3; --line:#1f2332; --ink:#11182a; }
+  *{ box-sizing:border-box }
+  html,body{ height:100%; }
+
+  /* Never show scrollbars */
+  html, body {
+    margin:0;
+    background-image: url(bg.png);
+    color:var(--fg);
+    font:16px/1.45 system-ui,Segoe UI,Inter,Roboto,Arial;
+    overflow:hidden;           /* no vertical or horizontal bars */
+    scrollbar-width:none;      /* Firefox */
+  }
+  html::-webkit-scrollbar, body::-webkit-scrollbar { display:none; } /* WebKit */
+
+  .wrap{ min-height:100svh; display:flex; flex-direction:column }
+  header{ padding:10px 14px; border-bottom:1px solid var(--line); background:var(--ink); display:flex; align-items:center; gap:10px }
+  header h1{ margin:0; font-size:14px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1 }
+  .controls{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+  .controls button{
+    appearance:none; border:1px solid var(--line); background:#151a27; color:#fff; border-radius:10px;
+    padding:8px 12px; font-weight:600; cursor:pointer
+  }
+
+  .stage{
+    flex:1; display:grid; place-items:center;
+    padding:8px;
+    min-height:0;
+    overscroll-behavior: contain; /* reduce rubber-banding within stage */
+  }
+
+  /* Allow native panning + pinch zoom, but no ghost-click issues */
+  #book { touch-action: pan-x pan-y pinch-zoom; }
+
+  .page{
+    background:#fff; overflow:hidden; display:flex; align-items:center; justify-content:center; cursor:pointer
+  }
+  .page img{
+    max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; display:block;
+    image-rendering:auto;
+  }
+  .hard{ background:#f2f2f2 }
+
+  .hint{ color:var(--muted); text-align:center; margin:8px 0 12px }
+
+  @media (max-width:700px){
+    header h1{ max-width:52vw }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Fashion Show - Week 21 – Flipbook</h1>
+    <div data-js="audio">
+          <button type="button" title="Play/Pause" data-role="toggle" style="background-color: #334163;">
+            <img alt="Play" src="https://api.iconify.design/lucide-play.svg" />
+          </button>
+          <input type="range" min="0" max="1" step="0.01" value="1" data-role="volume" />
+        </div>
+        <audio autoplay id="PlsWork">
+          <source src="music.mp3" type="audio/mpeg" />
+        </audio>
+    <div class="controls">
+      <button id="fitBtn" title="Cycle: Fit Screen → Fit Width → Fit Height → Actual">Fit: Screen</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div id="book" class="magazine"></div>
+  </div>
+
+  <p class="hint"></p>
+</div>
+
+<script>
+const totalPages = 42; // Change this to match the number of images each time
+const PAGES = Array.from({ length: totalPages }, (_, i) => {
+  const pageNumber = i.toString().padStart(3, '0');
+  return `images/page-${pageNumber}.jpg`;
+});
+
+
+  function addPages(el){
+    const make = (src, extra='') => '<div class="page '+extra+'"><img loading="lazy" decoding="async" src="'+src+'" alt="" /></div>';
+    if (PAGES.length){
+      el.insertAdjacentHTML('beforeend', make(PAGES[0],'hard'));
+      for (let i=1;i<PAGES.length-1;i++){ el.insertAdjacentHTML('beforeend', make(PAGES[i])); }
+      if (PAGES.length>1) el.insertAdjacentHTML('beforeend', make(PAGES[PAGES.length-1],'hard'));
+    }
+  }
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/3/turn.min.js"></script>
+<script>
+(function(){
+  const bookEl   = document.getElementById('book');
+  const stageEl  = document.querySelector('.stage');
+  const headerEl = document.querySelector('header');
+  const hintEl   = document.querySelector('.hint');
+  const fitBtn   = document.getElementById('fitBtn');
+
+  // Modes: 'screen' (default), 'width', 'height', 'actual'
+  const FIT_SEQUENCE = ['screen','width','height','actual'];
+  let fitModeIndex = 0;
+
+  // --- IMPORTANT: declare before Turn.js init ---
+  let isTurning = false;
+
+  addPages(bookEl);
+
+  $('#book').turn({
+    autoCenter:true,
+    elevation:50,
+    gradients:true,
+    display:'double',
+    when:{
+      turning: function(e, page){ isTurning = true; },
+      turned:  function(e, page){ isTurning = false; }
+    }
+  });
+
+  // Ensure integer pixel sizes to avoid blur/jitter
+  function i(v){ return Math.max(1, Math.floor(v)); }
+
+  function availableSize(){
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    const headerH = headerEl.getBoundingClientRect().height || 0;
+    const hintH   = hintEl.getBoundingClientRect().height || 0;
+
+    const stagePadV = 16;
+    const stagePadH = 16;
+
+    const maxW = i(vw - stagePadH);
+    const maxH = i(vh - headerH - hintH - stagePadV);
+
+    return { maxW: Math.max(240, maxW), maxH: Math.max(180, maxH) };
+  }
+
+  function setFitButtonLabel(mode){
+    const labels = {
+      screen: 'Fit: Screen',
+      width:  'Fit: Width',
+      height: 'Fit: Height',
+      actual: 'Actual Size'
+    };
+    fitBtn.textContent = labels[mode] || 'Fit: Screen';
+    fitBtn.title = 'Cycle: Fit Screen → Fit Width → Fit Height → Actual';
+  }
+
+  function currentDisplay(){
+    const { maxW } = availableSize();
+    return (maxW < 700) ? 'single' : 'double';
+  }
+
+  function sizeBook(){
+    const mode = FIT_SEQUENCE[fitModeIndex];
+    setFitButtonLabel(mode);
+
+    const disp = currentDisplay();
+    if ($('#book').turn('display') !== disp){
+      $('#book').turn('display', disp);
+    }
+
+    const natW = (disp === 'single') ? 1224 : 2448;
+    const natH = (disp === 'single') ? 1584 : 1584;
+
+    const { maxW, maxH } = availableSize();
+
+    let targetW = natW, targetH = natH;
+
+    if (mode === 'screen'){
+      const s = Math.min(maxW / natW, maxH / natH, 1);
+      targetW = i(natW * s);
+      targetH = i(natH * s);
+    }
+    else if (mode === 'width'){
+      const s = Math.min(maxW / natW, 1);
+      targetW = i(natW * s);
+      targetH = i(natH * s);
+      if (targetH > maxH){
+        const s2 = maxH / natH;
+        targetW = i(natW * s2);
+        targetH = i(natH * s2);
+      }
+    }
+    else if (mode === 'height'){
+      const s = Math.min(maxH / natH, 1);
+      targetW = i(natW * s);
+      targetH = i(natH * s);
+      if (targetW > maxW){
+        const s2 = maxW / natW;
+        targetW = i(natW * s2);
+        targetH = i(natH * s2);
+      }
+    }
+    else if (mode === 'actual'){
+      targetW = Math.min(natW, maxW);
+      targetH = Math.min(natH, maxH);
+    }
+
+    $('#book').turn('size', targetW, targetH);
+  }
+
+  // Initial and reactive sizing
+  sizeBook();
+  const ro = new ResizeObserver(sizeBook);
+  ro.observe(stageEl);
+  window.addEventListener('resize', sizeBook);
+
+  // Cycle fit modes
+  fitBtn.addEventListener('click', () => {
+    fitModeIndex = (fitModeIndex + 1) % FIT_SEQUENCE.length;
+    sizeBook();
+  });
+
+  // ===== Pointer Events tap handling (single source of truth) =====
+  // Double-tap toggles fit (no flip). Multi-touch (pinch) should not flip pages.
+  let lastTap = 0;
+  let suppressNextFlip = false;
+
+  // Track active pointers to detect multi-touch gestures
+  const activePointers = new Set();
+  let hadMultiTouchRecently = false;
+  let multiTouchTimer = null;
+
+  function markMultiTouch() {
+    hadMultiTouchRecently = true;
+    clearTimeout(multiTouchTimer);
+    multiTouchTimer = setTimeout(() => { hadMultiTouchRecently = false; }, 250);
+  }
+
+  bookEl.addEventListener('pointerdown', (e) => {
+    activePointers.add(e.pointerId);
+    if (activePointers.size > 1) {
+      markMultiTouch(); // a pinch/rotate started
+    }
+  }, { passive: true });
+
+  bookEl.addEventListener('pointercancel', (e) => {
+    activePointers.delete(e.pointerId);
+  }, { passive: true });
+
+  bookEl.addEventListener('pointerup', (e) => {
+    activePointers.delete(e.pointerId);
+    if (!e.isPrimary) return;
+
+    // If a multi-touch gesture just occurred, or a turn is animating, don't flip
+    if (hadMultiTouchRecently || isTurning) return;
+
+    // Double-tap on touch toggles fit and does NOT flip
+    if (e.pointerType === 'touch') {
+      const now = Date.now();
+      if (now - lastTap < 300) {
+        suppressNextFlip = true;
+        fitBtn.click(); // toggle fit mode
+        setTimeout(() => suppressNextFlip = false, 0);
+        lastTap = 0;
+        return;
+      }
+      lastTap = now;
+    }
+
+    if (suppressNextFlip) return;
+
+    const rect = bookEl.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const isSingle = ($('#book').turn('display') === 'single');
+
+    if (isSingle){
+      (x > rect.width * 0.4) ? $('#book').turn('next') : $('#book').turn('previous');
+    } else {
+      (x < rect.width/2) ? $('#book').turn('previous') : $('#book').turn('next');
+    }
+  }, { passive: true });
+
+  // Buttons + keyboard
+  document.getElementById('prevBtn').addEventListener('click',()=>$('#book').turn('previous'));
+  document.getElementById('nextBtn').addEventListener('click',()=>$('#book').turn('next'));
+  document.addEventListener('keydown', (e)=>{
+    if (e.key === 'ArrowLeft')  $('#book').turn('previous');
+    if (e.key === 'ArrowRight') $('#book').turn('next');
+  });
+})();
+</script>
+    <script data-scope="custom-audio">
+      (function() {
+        const root = document.querySelector('[data-js="audio"]');
+        if (!root) return;
+        const audio = document.getElementById('PlsWork');
+        const btnToggle = root.querySelector('[data-role="toggle"]');
+        const btnToggleIcon = btnToggle.querySelector('img');
+        const vol = root.querySelector('[data-role="volume"]');
+
+        function updateToggleIcon() {
+          const playing = !audio.paused && !audio.ended;
+          btnToggleIcon.src = playing ?
+            'https://api.iconify.design/lucide-pause.svg' :
+            'https://api.iconify.design/lucide-play.svg';
+          btnToggle.setAttribute(playing ? 'Pause' : 'Play');
+        }
+
+        function setRangeFill(el, val, max) {
+          const pct = max ? (val / max) * 100 : 0;
+          el.style.setProperty('--_fill', `${pct}%`);
+        }
+
+        btnToggle.addEventListener('click', () => {
+          if (audio.paused) {
+            audio.play();
+          } else {
+            audio.pause();
+          }
+        });
+
+
+
+        vol.addEventListener('input', () => {
+          audio.volume = parseFloat(vol.value);
+          setRangeFill(vol, vol.value, 1);
+        });
+
+        audio.addEventListener('play', updateToggleIcon);
+        audio.addEventListener('pause', updateToggleIcon);
+        audio.addEventListener('ended', updateToggleIcon);
+        audio.addEventListener('loadedmetadata', () => {
+          setRangeFill(vol, vol.value, 1);
+        });
+
+        [btnToggle].forEach(btn => {
+          btn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              btn.click();
+            }
+          });
+        });
+
+        updateToggleIcon();
+        setRangeFill(vol, vol.value, 1);
+      })();
+
+    </script>
+</body>
+</html>
