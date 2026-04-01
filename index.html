@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Fashion Show - Week 19 – Flipbook</title>
+<title>Fashion Show - Week 23 – Flipbook</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
   :root{ --bg:#0e0f14; --fg:#f3f6fb; --muted:#99a2b3; --line:#1f2332; --ink:#11182a; }
@@ -12,7 +12,7 @@
   /* Never show scrollbars */
   html, body {
     margin:0;
-    background:var(--bg);
+    background-image: url(bg.png);
     color:var(--fg);
     font:16px/1.45 system-ui,Segoe UI,Inter,Roboto,Arial;
     overflow:hidden;           /* no vertical or horizontal bars */
@@ -58,11 +58,18 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>Fashion Show - Week 19 – Flipbook</h1>
+    <h1>Fashion Show - Week 23 – Flipbook</h1>
+    <div data-js="audio">
+          <button type="button" title="Play/Pause" data-role="toggle" style="background-color: #334163;">
+            <img alt="Play" src="https://api.iconify.design/lucide-play.svg" />
+          </button>
+          <input type="range" min="0" max="1" step="0.01" value="1" data-role="volume" />
+        </div>
+        <audio autoplay id="PlsWork">
+          <source src="music.mp3" type="audio/mpeg" />
+        </audio>
     <div class="controls">
       <button id="fitBtn" title="Cycle: Fit Screen → Fit Width → Fit Height → Actual">Fit: Screen</button>
-      <button id="prevBtn" aria-label="Previous page">◀ Prev</button>
-      <button id="nextBtn" aria-label="Next page">Next ▶</button>
     </div>
   </header>
 
@@ -70,62 +77,17 @@
     <div id="book" class="magazine"></div>
   </div>
 
-  <p class="hint">Click/tap left = previous, right = next. Keys: ← →. Double-tap toggles fit mode. Pinch to zoom.</p>
+  <p class="hint"></p>
 </div>
 
 <script>
-  const PAGES = [
-  "images/page-001.jpg",
-  "images/page-002.jpg",
-  "images/page-003.jpg",
-  "images/page-004.jpg",
-  "images/page-005.jpg",
-  "images/page-006.jpg",
-  "images/page-007.jpg",
-  "images/page-008.jpg",
-  "images/page-009.jpg",
-  "images/page-010.jpg",
-  "images/page-011.jpg",
-  "images/page-012.jpg",
-  "images/page-013.jpg",
-  "images/page-014.jpg",
-  "images/page-015.jpg",
-  "images/page-016.jpg",
-  "images/page-017.jpg",
-  "images/page-018.jpg",
-  "images/page-019.jpg",
-  "images/page-020.jpg",
-  "images/page-021.jpg",
-  "images/page-022.jpg",
-  "images/page-023.jpg",
-  "images/page-024.jpg",
-  "images/page-025.jpg",
-  "images/page-026.jpg",
-  "images/page-027.jpg",
-  "images/page-028.jpg",
-  "images/page-029.jpg",
-  "images/page-030.jpg",
-  "images/page-031.jpg",
-  "images/page-032.jpg",
-  "images/page-033.jpg",
-  "images/page-034.jpg",
-  "images/page-035.jpg",
-  "images/page-036.jpg",
-  "images/page-037.jpg",
-  "images/page-038.jpg",
-  "images/page-039.jpg",
-  "images/page-040.jpg",
-  "images/page-041.jpg",
-  "images/page-042.jpg",
-  "images/page-043.jpg",
-  "images/page-044.jpg",
-  "images/page-045.jpg",
-  "images/page-046.jpg",
-  "images/page-047.jpg",
-  "images/page-048.jpg",
-  "images/page-049.jpg",
-  "images/page-050.jpg"
-];
+const totalPages = 90; // Change this to match the number of images each time
+const PAGES = Array.from({ length: totalPages }, (_, i) => {
+  const pageNumber = (i + 1).toString().padStart(3, '0');
+  return `images/page-${pageNumber}.jpg`;
+});
+
+
   function addPages(el){
     const make = (src, extra='') => '<div class="page '+extra+'"><img loading="lazy" decoding="async" src="'+src+'" alt="" /></div>';
     if (PAGES.length){
@@ -210,8 +172,8 @@
       $('#book').turn('display', disp);
     }
 
-    const natW = (disp === 'single') ? 1224 : 2448;
-    const natH = (disp === 'single') ? 1584 : 1584;
+    const natW = (disp === 'single') ? 2304 : 4608;
+    const natH = (disp === 'single') ? 3072 : 3072;
 
     const { maxW, maxH } = availableSize();
 
@@ -330,6 +292,64 @@
     if (e.key === 'ArrowRight') $('#book').turn('next');
   });
 })();
+</script>
+    <script data-scope="custom-audio">
+      (function() {
+        const root = document.querySelector('[data-js="audio"]');
+        if (!root) return;
+        const audio = document.getElementById('PlsWork');
+        const btnToggle = root.querySelector('[data-role="toggle"]');
+        const btnToggleIcon = btnToggle.querySelector('img');
+        const vol = root.querySelector('[data-role="volume"]');
+
+        function updateToggleIcon() {
+          const playing = !audio.paused && !audio.ended;
+          btnToggleIcon.src = playing ?
+            'https://api.iconify.design/lucide-pause.svg' :
+            'https://api.iconify.design/lucide-play.svg';
+          btnToggle.setAttribute(playing ? 'Pause' : 'Play');
+        }
+
+        function setRangeFill(el, val, max) {
+          const pct = max ? (val / max) * 100 : 0;
+          el.style.setProperty('--_fill', `${pct}%`);
+        }
+
+        btnToggle.addEventListener('click', () => {
+          if (audio.paused) {
+            audio.play();
+          } else {
+            audio.pause();
+          }
+        });
+
+
+
+        vol.addEventListener('input', () => {
+          audio.volume = parseFloat(vol.value);
+          setRangeFill(vol, vol.value, 1);
+        });
+
+        audio.addEventListener('play', updateToggleIcon);
+        audio.addEventListener('pause', updateToggleIcon);
+        audio.addEventListener('ended', updateToggleIcon);
+        audio.addEventListener('loadedmetadata', () => {
+          setRangeFill(vol, vol.value, 1);
+        });
+
+        [btnToggle].forEach(btn => {
+          btn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              btn.click();
+            }
+          });
+        });
+
+        updateToggleIcon();
+        setRangeFill(vol, vol.value, 1);
+      })();
+
 </script>
 </body>
 </html>
