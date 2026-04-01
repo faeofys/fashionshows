@@ -89,7 +89,7 @@ const PAGES = Array.from({ length: totalPages }, (_, i) => {
 
 
   function addPages(el){
-    const make = (src, extra='') => '<div class="page '+extra+'"><img loading="lazy" decoding="async" src="'+src+'" alt="" /></div>';
+    const make = (src, extra='') => '<div class="page '+extra+'"><img decoding="async" src="'+src+'" alt="" /></div>';
     if (PAGES.length){
       el.insertAdjacentHTML('beforeend', make(PAGES[0],'hard'));
       for (let i=1;i<PAGES.length-1;i++){ el.insertAdjacentHTML('beforeend', make(PAGES[i])); }
